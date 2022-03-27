@@ -86,6 +86,8 @@ class UserAuthorization implements KanataPluginInterface
             $app->post('/login', [LoginController::class, 'loginHandler'])->setName('login-handler');
             $app->get('/logout', [LoginController::class, 'logoutHandler'])->setName('logout-handler');
             $app->get('/register', [RegisterController::class, 'index'])->setName('register');
+            $app->post('/register', [RegisterController::class, 'registrationHandler'])->setName('register-handler');
+            $app->post('/auth-message/{message}', [RegisterController::class, 'authMessage'])->setName('auth-message');
             return $app;
         });
     }
@@ -99,7 +101,7 @@ class UserAuthorization implements KanataPluginInterface
                     $table->increments('id');
                     $table->string('name', 40);
                     $table->string('email', 80);
-                    $table->string('password', 80);
+                    $table->string('password', 150);
                     $table->dateTime('email_verified_at')->nullable();
                     $table->timestamps();
                 });

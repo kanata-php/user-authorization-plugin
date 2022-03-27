@@ -8,6 +8,7 @@ class Error
         0 => 'Unknown Error!',
         1 => 'User not found!',
         2 => 'Failed to authorize.',
+        3 => 'Data Invalid for registration.',
     ];
 
     public static function getError(int $code): ?string
