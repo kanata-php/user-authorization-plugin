@@ -3,15 +3,16 @@
 namespace UserAuthorization\Repositories;
 
 use Exception;
-use UserAuthorization\Services\Hash;
+use Kanata\Services\Hash;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Ramsey\Uuid\Uuid;
 use UserAuthorization\Exceptions\AuthFailedException;
+use UserAuthorization\Exceptions\EmailNotVerifiedException;
 use UserAuthorization\Exceptions\UserNotFoundException;
 use UserAuthorization\Models\User;
 use UserAuthorization\Services\AuthTable;
-use UserAuthorization\Services\Cookies;
+use UserAuthorization\Services\SessionCookies;
 
 class LoginRepository
 {
@@ -32,6 +33,10 @@ class LoginRepository
             throw new UserNotFoundException('Login failed: User not found (' . $input['email'] . ')!');
         }
 
+        if (null === $user->email_verified_at) {
+            throw new EmailNotVerifiedException('Login failed: User didn\'t verify email yet! (' . $input['email'] . ')');
+        }
+
         if (!Hash::verify($input['password'], $user->password)) {
             throw new AuthFailedException('Login failed: Failed to authorize (' . $input['email'] . ')!');
         }
@@ -39,10 +44,10 @@ class LoginRepository
         $session_key = Uuid::uuid4()->toString();
 
         // save to cookies
-        $currentCookie = Cookies::getSessionCookie($request);
+        $currentCookie = SessionCookies::getSessionCookie($request);
         $currentCookie['user_id'] = $user->id;
         $currentCookie['session_key'] = $session_key;
-        Cookies::setSessionCookie($response, $currentCookie);
+        SessionCookies::setSessionCookie($response, $currentCookie);
 
         // save to auth table
         AuthTable::getInstance()->store($session_key, ['user_id' => $user->id]);
@@ -58,8 +63,8 @@ class LoginRepository
      */
     public function processLogout(Request &$request, Response &$response): string
     {
-        $currentCookie = Cookies::getSessionCookie($request);
-        Cookies::expireCookie($request, $response);
+        $currentCookie = SessionCookies::getSessionCookie($request);
+        SessionCookies::expireSessionCookie($request, $response);
         
         AuthTable::getInstance()->delete($currentCookie['session_key']);
 

@@ -1,20 +1,22 @@
 <?php
 
-use Illuminate\Database\Schema\Blueprint;
-use Kanata\Annotations\Author;
-use Kanata\Annotations\Description;
-use Kanata\Annotations\Plugin;
-use Kanata\Interfaces\KanataPluginInterface;
 use League\Plates\Engine;
+use Kanata\Annotations\Author;
+use Kanata\Annotations\Plugin;
+use UserAuthorization\Models\User;
+use Kanata\Annotations\Description;
 use Psr\Container\ContainerInterface;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use UserAuthorization\Services\Cookies;
+use UserAuthorization\Services\SessionCookies;
+use Illuminate\Database\Schema\Blueprint;
 use UserAuthorization\Commands\SeedUsers;
+use Kanata\Interfaces\KanataPluginInterface;
+use UserAuthorization\Models\EmailConfirmation;
+use Psr\Http\Message\ResponseInterface as Response;
+use UserAuthorization\Http\Middlewares\AuthMiddleware;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use UserAuthorization\Http\Controllers\LoginController;
 use UserAuthorization\Http\Controllers\RegisterController;
-use UserAuthorization\Models\User;
-use UserAuthorization\Services\AuthTable;
-use UserAuthorization\Services\Cookies;
-use UserAuthorization\Http\Middlewares\AuthMiddleware;
 
 /**
  * @Plugin(name="UserAuthorization")
@@ -38,8 +40,6 @@ class UserAuthorization implements KanataPluginInterface
      */
     public function start(): void
     {
-        $this->start_table();
-
         if (is_http_execution()) {
             $this->register_middlewares();
             $this->local_views();
@@ -49,11 +49,6 @@ class UserAuthorization implements KanataPluginInterface
         $this->register_migrations();
         $this->register_commands();
         $this->register_auth();
-    }
-
-    public function start_table()
-    {
-        AuthTable::getInstance();
     }
 
     public function register_commands()
@@ -87,22 +82,47 @@ class UserAuthorization implements KanataPluginInterface
             $app->get('/logout', [LoginController::class, 'logoutHandler'])->setName('logout-handler');
             $app->get('/register', [RegisterController::class, 'index'])->setName('register');
             $app->post('/register', [RegisterController::class, 'registrationHandler'])->setName('register-handler');
-            $app->post('/auth-message/{message}', [RegisterController::class, 'authMessage'])->setName('auth-message');
+            $app->get('/email-confirmation', [RegisterController::class, 'emailConfirmation'])->setName('email-confirmation');
+            $app->get('/auth-message', [RegisterController::class, 'authMessage'])->setName('auth-message');
             return $app;
         });
     }
 
     public function register_migrations()
     {
-        add_action('migrations', function() {
+        add_action('rollback_migrations', function () {
+            // users
+            if (mysql_table_exists(DB_DATABASE, User::TABLE_NAME)) {
+                container()->db->schema()->drop(User::TABLE_NAME);
+            }
+
+            // email_confirmation
+            if (mysql_table_exists(DB_DATABASE, EmailConfirmation::TABLE_NAME)) {
+                container()->db->schema()->drop(EmailConfirmation::TABLE_NAME);
+            }
+        });
+
+        add_action('migrations', function () {
             // users
             if (!mysql_table_exists(DB_DATABASE, User::TABLE_NAME)) {
                 container()->db->schema()->create(User::TABLE_NAME, function (Blueprint $table) {
                     $table->increments('id');
                     $table->string('name', 40);
-                    $table->string('email', 80);
+                    $table->string('email', 80)->unique();
                     $table->string('password', 150);
                     $table->dateTime('email_verified_at')->nullable();
+                    $table->timestamps();
+                });
+            }
+
+            // email_confirmation
+            if (!mysql_table_exists(DB_DATABASE, EmailConfirmation::TABLE_NAME)) {
+                container()->db->schema()->create(EmailConfirmation::TABLE_NAME, function (Blueprint $table) {
+                    $table->increments('id');
+                    $table->string('user_id', 40);
+                    $table->string('token', 80);
+                    $table->dateTime('expire_at');
+                    $table->boolean('used')->default(false);
                     $table->timestamps();
                 });
             }
