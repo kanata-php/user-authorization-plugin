@@ -6,6 +6,7 @@ use Kanata\Annotations\Plugin;
 use UserAuthorization\Models\User;
 use Kanata\Annotations\Description;
 use Psr\Container\ContainerInterface;
+use UserAuthorization\Services\AuthHelper;
 use UserAuthorization\Services\Cookies;
 use UserAuthorization\Services\SessionCookies;
 use Illuminate\Database\Schema\Blueprint;
@@ -136,7 +137,7 @@ class UserAuthorization implements KanataPluginInterface
     public function register_auth()
     {
         add_filter('is_logged', function (bool $is_logged, $request) {
-            return null !== $request->authorized ? $request->authorized : false;
+            return AuthHelper::hasAuthSession($request);
         });
     }
 }

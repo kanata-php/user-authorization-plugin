@@ -58,6 +58,8 @@ class LoginController
 
         }
 
+        clear_form_session($request);
+
         return redirect($response, $url);
     }
 
@@ -65,7 +67,7 @@ class LoginController
     {
         try {
             
-            $url = (new LoginRepository)->processLogout($request, $response);
+            $url = (new LoginRepository)->processLogout($request);
 
         } catch (Exception $e) {
 

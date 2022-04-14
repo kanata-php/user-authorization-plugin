@@ -5,11 +5,12 @@ namespace UserAuthorization\Repositories;
 use Exception;
 use Mail\Mail;
 use Carbon\Carbon;
-use Kanata\Helpers\Form;
 use Ramsey\Uuid\Uuid;
+use Kanata\Helpers\Form;
+use Kanata\Services\Hash;
 use UserAuthorization\Models\User;
 use Kanata\Models\Traits\Validation;
-use UserAuthorization\Services\Hash;
+use UserAuthorization\Rules\RecordDoesntExist;
 use UserAuthorization\Models\EmailConfirmation;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Email;
@@ -21,7 +22,6 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Required;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use UserAuthorization\Exceptions\TokenExpiredException;
-use UserAuthorization\Rules\RecordDoesntExist;
 use UserAuthorization\Exceptions\RegistrationValidationException;
 
 class RegistrationRepository

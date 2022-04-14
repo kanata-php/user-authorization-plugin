@@ -4,7 +4,7 @@ namespace UserAuthorization\Commands;
 
 use Carbon\Carbon;
 use Kanata\Commands\Traits\LogoTrait;
-use UserAuthorization\Services\Hash;
+use Kanata\Services\Hash;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
