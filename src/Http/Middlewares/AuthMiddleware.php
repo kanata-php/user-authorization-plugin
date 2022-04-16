@@ -2,20 +2,25 @@
 
 namespace UserAuthorization\Http\Middlewares;
 
-use Kanata\Exceptions\UnauthorizedException;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use UserAuthorization\Services\AuthSessionHelper;
+use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
+use Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware
 {
     /**
      * @param Request $request
-     * @return Request
-     * @throws UnauthorizedException
+     * @param RequestHandler $handler
+     * @return ResponseInterface
      */
-    public function __invoke(Request $request): Request
+    public function __invoke(Request $request, RequestHandler $handler): ResponseInterface
     {
-        // TODO
+        if (!AuthSessionHelper::hasAuthSession($request)) {
+            return redirect(new Response, route('login'));
+        }
 
-        return $request;
+        return $handler->handle($request);
     }
 }

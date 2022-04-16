@@ -4,9 +4,9 @@ namespace UserAuthorization\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class User extends Model
+class Token extends Model
 {
-    const TABLE_NAME = 'users';
+    const TABLE_NAME = 'tokens';
 
     protected $table = self::TABLE_NAME;
 
@@ -14,8 +14,10 @@ class User extends Model
 
     protected $fillable = [
         'name',
-        'email',
-        'password',
-        'email_verified_at',
+        'user_id',
+        'expire_at',
+        'aud',
+        'token',
+        'aud_protocol',
     ];
 }

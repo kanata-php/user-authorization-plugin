@@ -9,8 +9,6 @@ class EmailConfirmation extends Model
 {
     const TABLE_NAME = 'email_confirmations';
 
-    /** @var string */
-    protected $name = self::TABLE_NAME;
     protected $table = self::TABLE_NAME;
 
     protected array $defaults = [];

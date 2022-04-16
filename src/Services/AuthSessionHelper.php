@@ -7,7 +7,7 @@ use Kanata\Drivers\SessionTable;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use UserAuthorization\Models\User;
 
-class AuthHelper
+class AuthSessionHelper
 {
     const AUTH_SESSION_KEY = 'auth-session';
 
@@ -52,5 +52,20 @@ class AuthHelper
         }
 
         return true;
+    }
+
+    /**
+     * Get user_id from request when present.
+     *
+     * @param Request $request
+     * @return int|null
+     */
+    public static function getUserId(Request $request): ?int
+    {
+        if (!self::hasAuthSession($request)) {
+            return null;
+        }
+
+        return array_get(self::getAuthSession($request), 'user_id');
     }
 }

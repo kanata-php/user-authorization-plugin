@@ -10,7 +10,7 @@ use UserAuthorization\Exceptions\AuthFailedException;
 use UserAuthorization\Exceptions\EmailNotVerifiedException;
 use UserAuthorization\Exceptions\UserNotFoundException;
 use UserAuthorization\Models\User;
-use UserAuthorization\Services\AuthHelper;
+use UserAuthorization\Services\AuthSessionHelper;
 
 class LoginRepository
 {
@@ -39,7 +39,7 @@ class LoginRepository
             throw new AuthFailedException('Login failed: Failed to authorize (' . $input['email'] . ')!');
         }
 
-        AuthHelper::createAuthSession($request, $user);
+        AuthSessionHelper::createAuthSession($request, $user);
 
         return base_url() . '/admin';
     }
@@ -52,7 +52,7 @@ class LoginRepository
      */
     public function processLogout(Request &$request): string
     {
-        AuthHelper::clearAuthSession($request);
+        AuthSessionHelper::clearAuthSession($request);
 
         return base_url() . '/login';
     }

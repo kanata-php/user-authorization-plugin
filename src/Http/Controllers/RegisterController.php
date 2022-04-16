@@ -25,9 +25,11 @@ class RegisterController
             $params['error'] = $error;
         }
 
+        $flash_message = get_flash_message($request);
+
         return view($response, 'auth::register', array_merge(
             $params,
-            ['errors' => $this->processFormMessages(get_flash_message($request) ?? [])],
+            ['errors' => $this->processFormMessages($flash_message['errors'] ?? [])],
             get_form_session($request),
         ));
     }
@@ -43,13 +45,13 @@ class RegisterController
             logger()->error($e->getMessage());
             $fieldsMessage = json_decode($e->getMessage(), true);
             set_flash_message($request, array_merge(
-                ['form' => 'Data Invalid for registration.'],
+                ['errors' => ['form' => 'Data Invalid for registration.']],
                 $fieldsMessage
             ));
         } catch (Exception $e) {
             $error = true;
             logger()->error($e->getMessage());
-            set_flash_message($request, ['form' => 'Unknown Error!']);
+            set_flash_message($request, ['errors' => ['form' => 'Unknown Error!']]);
         }
 
         if (!$error) {

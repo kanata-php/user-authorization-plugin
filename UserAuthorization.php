@@ -1,19 +1,17 @@
 <?php
 
-use League\Plates\Engine;
 use Kanata\Annotations\Author;
 use Kanata\Annotations\Plugin;
+use Slim\Routing\RouteCollectorProxy;
+use UserAuthorization\Http\Controllers\AdminController;
+use UserAuthorization\Models\Token;
 use UserAuthorization\Models\User;
 use Kanata\Annotations\Description;
 use Psr\Container\ContainerInterface;
-use UserAuthorization\Services\AuthHelper;
-use UserAuthorization\Services\Cookies;
-use UserAuthorization\Services\SessionCookies;
 use Illuminate\Database\Schema\Blueprint;
 use UserAuthorization\Commands\SeedUsers;
 use Kanata\Interfaces\KanataPluginInterface;
 use UserAuthorization\Models\EmailConfirmation;
-use Psr\Http\Message\ResponseInterface as Response;
 use UserAuthorization\Http\Middlewares\AuthMiddleware;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use UserAuthorization\Http\Controllers\LoginController;
@@ -42,14 +40,14 @@ class UserAuthorization implements KanataPluginInterface
     public function start(): void
     {
         if (is_http_execution()) {
-            $this->register_middlewares();
             $this->local_views();
             $this->register_routes();
         }
 
+        $this->register_helpers();
         $this->register_migrations();
         $this->register_commands();
-        $this->register_auth();
+        $this->register_header_menu();
     }
 
     public function register_commands()
@@ -57,13 +55,6 @@ class UserAuthorization implements KanataPluginInterface
         add_filter('commands', function($app) {
             $app->add(new SeedUsers());
             return $app;
-        });
-    }
-
-    public function register_middlewares()
-    {
-        add_filter('http_middleware', function (Request $request) {
-            return (new AuthMiddleware)($request);
         });
     }
 
@@ -78,28 +69,58 @@ class UserAuthorization implements KanataPluginInterface
     public function register_routes()
     {
         add_filter('routes', function($app) {
+            // login/logout
             $app->get('/login', [LoginController::class, 'index'])->setName('login');
             $app->post('/login', [LoginController::class, 'loginHandler'])->setName('login-handler');
             $app->get('/logout', [LoginController::class, 'logoutHandler'])->setName('logout-handler');
+
+            // registration cycle
             $app->get('/register', [RegisterController::class, 'index'])->setName('register');
             $app->post('/register', [RegisterController::class, 'registrationHandler'])->setName('register-handler');
             $app->get('/email-confirmation', [RegisterController::class, 'emailConfirmation'])->setName('email-confirmation');
+
+            // messages
             $app->get('/auth-message', [RegisterController::class, 'authMessage'])->setName('auth-message');
+
+            // protected section
+
+            // api
+            $app->group('/admin', function (RouteCollectorProxy $group) {
+                $group->get('', [AdminController::class, 'index'])->setName('admin');
+
+                $group->get('/api-tokens', [AdminController::class, 'apiTokens'])->setName('api-tokens');
+                $group->post('/api-tokens', [AdminController::class, 'generateApiToken'])->setName('api-tokens-generate');
+                $group->post('/api-tokens/delete', [AdminController::class, 'deleteApiToken'])->setName('api-tokens-delete');
+            })->add(new AuthMiddleware);
+
             return $app;
+        });
+    }
+
+    public function register_helpers()
+    {
+        add_filter('add_helpers', function (array $helpers) {
+            $helpers[] = __DIR__ . '/helpers/auth-helpers.php';
+            return $helpers;
         });
     }
 
     public function register_migrations()
     {
         add_action('rollback_migrations', function () {
-            // users
-            if (mysql_table_exists(DB_DATABASE, User::TABLE_NAME)) {
-                container()->db->schema()->drop(User::TABLE_NAME);
-            }
-
             // email_confirmation
             if (mysql_table_exists(DB_DATABASE, EmailConfirmation::TABLE_NAME)) {
                 container()->db->schema()->drop(EmailConfirmation::TABLE_NAME);
+            }
+
+            // tokens
+            if (mysql_table_exists(DB_DATABASE, Token::TABLE_NAME)) {
+                container()->db->schema()->drop(Token::TABLE_NAME);
+            }
+
+            // users
+            if (mysql_table_exists(DB_DATABASE, User::TABLE_NAME)) {
+                container()->db->schema()->drop(User::TABLE_NAME);
             }
         });
 
@@ -120,24 +141,40 @@ class UserAuthorization implements KanataPluginInterface
             if (!mysql_table_exists(DB_DATABASE, EmailConfirmation::TABLE_NAME)) {
                 container()->db->schema()->create(EmailConfirmation::TABLE_NAME, function (Blueprint $table) {
                     $table->increments('id');
-                    $table->string('user_id', 40);
+                    $table->foreignId('user_id');
                     $table->string('token', 80);
                     $table->dateTime('expire_at');
                     $table->boolean('used')->default(false);
                     $table->timestamps();
                 });
             }
+
+            // tokens
+            if (!mysql_table_exists(DB_DATABASE, Token::TABLE_NAME)) {
+                container()->db->schema()->create(Token::TABLE_NAME, function (Blueprint $table) {
+                    $table->increments('id');
+                    $table->string('name', 40);
+                    $table->string('token', 500);
+                    $table->dateTime('expire_at')->nullable();
+                    $table->string('aud', 100);
+                    $table->string('aud_protocol', 10);
+                    $table->foreignId('user_id');
+                    $table->timestamps();
+                });
+            }
         });
     }
 
-    /**
-     * This is an important hook to specify to views that the user is authorized
-     * at the helper used for that by the views.
-     */
-    public function register_auth()
+    public function register_header_menu()
     {
-        add_filter('is_logged', function (bool $is_logged, $request) {
-            return AuthHelper::hasAuthSession($request);
+        add_filter('header_navbar_menus', function (array $menus) {
+            $menus[] = 'auth::parts/navbar-auth';
+            return $menus;
+        });
+
+        add_filter('header_navbar_menus_mobile', function (array $menus) {
+            $menus[] = 'auth::parts/navbar-auth-mobile';
+            return $menus;
         });
     }
 }
