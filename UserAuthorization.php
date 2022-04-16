@@ -156,8 +156,8 @@ class UserAuthorization implements KanataPluginInterface
                     $table->string('name', 40);
                     $table->string('token', 500);
                     $table->dateTime('expire_at')->nullable();
-                    $table->string('aud', 100);
-                    $table->string('aud_protocol', 10);
+                    $table->string('aud', 100)->nullable();
+                    $table->string('aud_protocol', 10)->nullable();
                     $table->foreignId('user_id');
                     $table->timestamps();
                 });

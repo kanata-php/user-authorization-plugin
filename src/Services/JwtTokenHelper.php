@@ -17,11 +17,14 @@ class JwtTokenHelper
     public static function generateJwtToken(array $data): string
     {
         $key = $data['name'];
-        $payload = array(
-            "aud" => $data['aud_protocol'] . $data['aud'],
+        $payload = [
             "iat" => Carbon::now()->timestamp,
             "user_id" => array_get($data, 'user_id'),
-        );
+        ];
+
+        if (isset($data['aud_protocol']) && isset($data['aud'])) {
+            $payload['aud'] = $data['aud_protocol'] . $data['aud'];
+        }
 
         return JWT::encode($payload, $key, self::HS256_ALGORITHM);
     }

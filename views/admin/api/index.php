@@ -40,9 +40,9 @@ $this->layout('auth::layouts/admin', array_merge($this->data, [
             <div class="space-y-6">
                 <div class="grid grid-cols-3 gap-6">
                     <div class="col-span-3">
-                        <label for="company-website" class="block text-sm font-medium text-gray-700">Domain</label>
+                        <label for="company-website" class="block text-sm font-medium text-gray-700">Domain<span class="ml-2 text-xs text-gray-400">(leave it empty if no domain restriction is needed)</span></label>
                         <div class="mt-1 flex rounded-md shadow-sm">
-                            <input readonly class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm" type="text" name="aud_protocol" id="aud_protocol" x-model="data.audProtocol" @click="toggleAudProtocol()">
+                            <input readonly class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm w-20 cursor-pointer" type="text" name="aud_protocol" id="aud_protocol" x-model="data.audProtocol" @click="toggleAudProtocol()">
                             <input x-model="data.aud" type="text" name="aud" id="aud" class="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300" placeholder="tcpigeon.com">
                         </div>
                         <?php if (isset($errors['aud'])) { ?>
@@ -55,7 +55,7 @@ $this->layout('auth::layouts/admin', array_merge($this->data, [
             <div class="space-y-6">
                 <div class="grid grid-cols-3 gap-6">
                     <div class="col-span-3">
-                        <label for="company-website" class="block text-sm font-medium text-gray-700">Expires at</label>
+                        <label for="company-website" class="block text-sm font-medium text-gray-700">Expires at <span class="ml-2 text-xs text-gray-400">(leave it empty if no expire date is needed)</span></label>
                         <div class="mt-1 flex rounded-md shadow-sm">
                             <input x-model="data.expire_at" type="datetime-local" name="expire_at" id="expire_at" class="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300">
                         </div>
@@ -99,10 +99,14 @@ $this->layout('auth::layouts/admin', array_merge($this->data, [
                         <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                             <table class="min-w-full divide-y divide-gray-300">
                                 <thead class="bg-gray-50">
-                                <tr class="grid grid-cols-4">
+                                <tr class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Name</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Token</th>
-                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Expires at</th>
+
+                                    <th scope="col" class="hidden md:block px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Expires at</th>
+
+                                    <th scope="col" class="hidden lg:block px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Domain</th>
+
                                     <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Actions</th>
                                 </tr>
                                 </thead>
@@ -115,10 +119,11 @@ $this->layout('auth::layouts/admin', array_merge($this->data, [
                                 </template>
 
                                 <template x-for="token in tokens">
-                                    <tr class="grid grid-cols-4">
+                                    <tr class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6" x-text="token.name"></td>
+
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 flex">
-                                            <span x-text="token.token.substr(0, 18) + (token.token.length > 18 ? '...' : '')"></span>
+                                            <span x-text="token.token.substr(0, 10) + (token.token.length > 10 ? '...' : '')"></span>
                                             <button :id="'token-copied-' + token.id" class="ml-4 has-tooltip" @click="copyToClipboard('token-copied-' + token.id, token.token)">
                                                 <span class='tooltip hidden absolute rounded shadow-lg py-1 px-2 bg-black text-white -mt-10 -ml-12'></span>
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -126,11 +131,22 @@ $this->layout('auth::layouts/admin', array_merge($this->data, [
                                                 </svg>
                                             </button>
                                         </td>
-                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500" x-text="token.expire_at"></td>
-                                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+
+                                        <td class="hidden md:block whitespace-nowrap px-3 py-4 text-sm text-gray-500" x-text="token.expire_at ?? '-'"></td>
+
+                                        <td class="hidden lg:block whitespace-nowrap px-3 py-4 text-sm text-gray-500" x-text="token.aud ? token.aud_protocol + token.aud : '-'"></td>
+
+                                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 flex justify-end text-sm font-medium sm:pr-6">
                                             <form method="POST" onsubmit="return confirm('Are you sure you want to delete this token?')" action="<?= route('api-tokens-delete') ?>">
                                                 <input type="hidden" name="id" :value="token.id">
-                                                <button type="submit" class="text-indigo-600 hover:text-indigo-900">Delete<span class="sr-only" x-text="token.name"></span></button>
+                                                <button type="submit" class="flex justify-end text-red-700 hover:text-red-900">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    <span class="ml-2 hidden md:block">
+                                                        Delete<span class="sr-only" x-text="token.name"></span>
+                                                    </span>
+                                                </button>
                                             </form>
                                         </td>
                                     </tr>

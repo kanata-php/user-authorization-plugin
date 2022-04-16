@@ -49,20 +49,17 @@ class TokenRepository
             'aud' => [
                 'value' => array_get($data, 'aud'),
                 'rules' => [
-                    new Required,
-                    new NotBlank(),
+                    new Type('string'),
                 ],
             ],
             'aud_protocol' => [
                 'value' => array_get($data, 'aud_protocol'),
                 'rules' => [
-                    new Required,
                     new Type('string'),
                     new AtLeastOneOf([
                         new EqualTo('http://'),
                         new EqualTo('https://'),
                     ]),
-                    new NotBlank(),
                 ],
             ],
             'expire_at' => [
