@@ -3,7 +3,10 @@
 use Kanata\Annotations\Author;
 use Kanata\Annotations\Plugin;
 use Slim\Routing\RouteCollectorProxy;
+use UserAuthorization\Commands\IssueToken;
 use UserAuthorization\Http\Controllers\AdminController;
+use UserAuthorization\Http\Controllers\Api\UsersController;
+use UserAuthorization\Http\Middlewares\JwtAuthMiddleware;
 use UserAuthorization\Models\Token;
 use UserAuthorization\Models\User;
 use Kanata\Annotations\Description;
@@ -54,6 +57,7 @@ class UserAuthorization implements KanataPluginInterface
     {
         add_filter('commands', function($app) {
             $app->add(new SeedUsers());
+            $app->add(new IssueToken());
             return $app;
         });
     }
@@ -84,14 +88,18 @@ class UserAuthorization implements KanataPluginInterface
 
             // protected section
 
-            // api
+            // api management
             $app->group('/admin', function (RouteCollectorProxy $group) {
                 $group->get('', [AdminController::class, 'index'])->setName('admin');
-
                 $group->get('/api-tokens', [AdminController::class, 'apiTokens'])->setName('api-tokens');
                 $group->post('/api-tokens', [AdminController::class, 'generateApiToken'])->setName('api-tokens-generate');
                 $group->post('/api-tokens/delete', [AdminController::class, 'deleteApiToken'])->setName('api-tokens-delete');
             })->add(new AuthMiddleware);
+
+            // api
+            $app->group('/api', function (RouteCollectorProxy $group) {
+                $group->get('/users', [UsersController::class, 'index'])->setName('api-users-index');
+            })->add(new JwtAuthMiddleware);
 
             return $app;
         });

@@ -20,4 +20,11 @@ class Token extends Model
         'token',
         'aud_protocol',
     ];
+
+    // scopes
+
+    public function scopeByToken($query, string $token)
+    {
+        $query->where('token', $token);
+    }
 }

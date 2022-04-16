@@ -2,7 +2,6 @@
 
 namespace UserAuthorization\Services;
 
-use Exception;
 use Kanata\Drivers\SessionTable;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use UserAuthorization\Models\User;

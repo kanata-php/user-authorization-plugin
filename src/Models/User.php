@@ -18,4 +18,11 @@ class User extends Model
         'password',
         'email_verified_at',
     ];
+
+    // scope
+
+    public function scopeByEmail($query, $email)
+    {
+        $query->where('email', $email);
+    }
 }

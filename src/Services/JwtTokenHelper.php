@@ -5,6 +5,8 @@ namespace UserAuthorization\Services;
 use Carbon\Carbon;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use UserAuthorization\Models\Token;
 
 class JwtTokenHelper
 {
@@ -39,5 +41,28 @@ class JwtTokenHelper
         $decoded = JWT::decode($token, new Key($name, self::HS256_ALGORITHM));
 
         return (array) $decoded;
+    }
+
+    public static function getAuthorization(Request $request): array
+    {
+        if (!$request->hasHeader('Authorization')) {
+            return [];
+        }
+
+        $authorization = $request->getHeader('Authorization');
+        $authorization = current($authorization);
+        $authorization = explode(' ', $authorization);
+
+        if ($authorization[0] !== 'Bearer') {
+            return [];
+        }
+
+        $token = $authorization[1];
+
+        $tokenRecord = Token::byToken($token)->first();
+
+        // TODO: restrict by domain
+
+        return self::decodeJwtToken($token, $tokenRecord->name);
     }
 }

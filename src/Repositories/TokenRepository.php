@@ -132,6 +132,13 @@ class TokenRepository
         // @throws TokenGenerationValidationException
         $this->validateTokenData($data);
 
+        $this->createToken($data);
+
+        return route('api-tokens');
+    }
+
+    public function createToken(array $data): Token
+    {
         $data['token'] = JwtTokenHelper::generateJwtToken($data);
 
         $token = Token::create($data);
@@ -140,7 +147,7 @@ class TokenRepository
             throw new Exception('Failed to create token record.');
         }
 
-        return route('api-tokens');
+        return $token;
     }
 
     public function delete(Request $request): string
