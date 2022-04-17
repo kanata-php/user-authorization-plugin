@@ -24,7 +24,7 @@ class JwtAuthMiddleware
          * Expected return: array
          * @param array
          */
-        $auth = apply_filters('jwt_auth_hook', JwtTokenHelper::getAuthorization($request));
+        $auth = apply_filters('jwt_auth_hook', [JwtTokenHelper::getAuthorization($request)]);
 
         if (empty($auth)) {
             return json_response(new Response, 'unauthorized', 401, 'Unauthorized Procedure!');

@@ -120,7 +120,10 @@ $this->layout('auth::layouts/admin', array_merge($this->data, [
 
                                 <template x-for="token in tokens">
                                     <tr class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6" x-text="token.name"></td>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 has-tooltip">
+                                            <span x-text="token.name.substr(0, 10) + (token.name.length > 10 ? '...' : '')"></span>
+                                            <span class='tooltip rounded shadow-lg py-1 px-2 bg-black text-white -mt-10 -ml-12' x-text="token.name"></span>
+                                        </td>
 
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 flex">
                                             <span x-text="token.token.substr(0, 10) + (token.token.length > 10 ? '...' : '')"></span>

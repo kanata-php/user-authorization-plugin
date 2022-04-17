@@ -3,6 +3,9 @@
 use Kanata\Annotations\Author;
 use Kanata\Annotations\Plugin;
 use Slim\Routing\RouteCollectorProxy;
+use Swoole\Table;
+use Swoole\WebSocket\Server as WebSocketServer;
+use Swoole\Http\Request as SwooleRequest;
 use UserAuthorization\Commands\IssueToken;
 use UserAuthorization\Http\Controllers\AdminController;
 use UserAuthorization\Http\Controllers\Api\UsersController;
@@ -16,9 +19,10 @@ use UserAuthorization\Commands\SeedUsers;
 use Kanata\Interfaces\KanataPluginInterface;
 use UserAuthorization\Models\EmailConfirmation;
 use UserAuthorization\Http\Middlewares\AuthMiddleware;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use UserAuthorization\Http\Controllers\LoginController;
 use UserAuthorization\Http\Controllers\RegisterController;
+use UserAuthorization\Services\JwtTokenHelper;
+use UserAuthorization\Services\SocketAuthHelper;
 
 /**
  * @Plugin(name="UserAuthorization")
@@ -31,6 +35,8 @@ class UserAuthorization implements KanataPluginInterface
     const USER_AUTHORIZATION_VIEW = 'user-authorization';
 
     protected ContainerInterface $container;
+
+    protected Table $socketAuthTable;
 
     public function __construct(ContainerInterface $container)
     {
@@ -51,6 +57,10 @@ class UserAuthorization implements KanataPluginInterface
         $this->register_migrations();
         $this->register_commands();
         $this->register_header_menu();
+
+        // websockets
+        $this->register_socket_auth_table();
+        $this->register_websocket_hooks();
     }
 
     public function register_commands()
@@ -98,7 +108,9 @@ class UserAuthorization implements KanataPluginInterface
 
             // api
             $app->group('/api', function (RouteCollectorProxy $group) {
-                $group->get('/users', [UsersController::class, 'index'])->setName('api-users-index');
+                // $group->get('/users', [UsersController::class, 'index'])->setName('api-users-index');
+
+                $group->get('/issue-single-use-token', [UsersController::class, 'generateSingleUserToken'])->setName('issue-single-user-token');
             })->add(new JwtAuthMiddleware);
 
             return $app;
@@ -163,9 +175,11 @@ class UserAuthorization implements KanataPluginInterface
                     $table->increments('id');
                     $table->string('name', 40);
                     $table->string('token', 500);
-                    $table->dateTime('expire_at')->nullable();
-                    $table->string('aud', 100)->nullable();
+                    $table->dateTime('expire_at')->nullable()->comment('Expire date for token. Null when doesnt expire.');
+                    $table->string('aud', 100)->nullable()->comment('Audience: domain allowed to use token. Null when not restricted.');
                     $table->string('aud_protocol', 10)->nullable();
+                    $table->integer('allowed_uses')->nullable()->comment('Number of times this token is allowed to be used.');
+                    $table->integer('uses')->default(0)->comment('Number of times this token as been used.');
                     $table->foreignId('user_id');
                     $table->timestamps();
                 });
@@ -184,5 +198,50 @@ class UserAuthorization implements KanataPluginInterface
             $menus[] = 'auth::parts/navbar-auth-mobile';
             return $menus;
         });
+    }
+
+    public function register_socket_auth_table()
+    {
+        $table = new Table(1024);
+        $table->column('user_id', Table::TYPE_INT, 10);
+        $table->create();
+        $this->socketAuthTable = $table;
+    }
+
+    public function register_websocket_hooks()
+    {
+        add_action('socket_start_checkpoint', function(WebSocketServer $server, SwooleRequest $request) {
+            if (!isset($request->get['token'])) {
+                $this->deny_websocket_connection($server, $request->fd, 'Missing Token.');
+                return;
+            }
+
+            $tokenRecord = Token::byToken($request->get['token'])->first();
+            $tokenRecord->uses = $tokenRecord->uses + 1;
+            $tokenRecord->save();
+
+            if (null === $tokenRecord) {
+                $this->deny_websocket_connection($server, $request->fd, 'Missing Token doesn\'t exist.');
+                return;
+            }
+
+            if (
+                null !== $tokenRecord->aud
+                && $tokenRecord->aud !== parse_url($request->header['origin'], PHP_URL_HOST)
+            ) {
+                $this->deny_websocket_connection($server, $request->fd, 'Origin not allowed by token.');
+                return;
+            }
+
+            $decodedToken = JwtTokenHelper::decodeJwtToken($tokenRecord->token, $tokenRecord->name);
+
+            $this->socketAuthTable->set($request->fd, ['user_id' => $decodedToken['user_id']]);
+        });
+    }
+
+    private function deny_websocket_connection(WebSocketServer $server, int $fd, string $message)
+    {
+        logger()->debug('WS Connection Denied: ' . $message);
+        $server->close($fd, true);
     }
 }

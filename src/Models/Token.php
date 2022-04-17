@@ -19,6 +19,8 @@ class Token extends Model
         'aud',
         'token',
         'aud_protocol',
+        'allowed_uses',
+        'uses',
     ];
 
     // scopes

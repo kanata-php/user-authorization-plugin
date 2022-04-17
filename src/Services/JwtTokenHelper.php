@@ -43,10 +43,34 @@ class JwtTokenHelper
         return (array) $decoded;
     }
 
+    /**
+     * Method used to consume jwt token.
+     *
+     * @param Request $request
+     * @return array
+     */
     public static function getAuthorization(Request $request): array
     {
-        if (!$request->hasHeader('Authorization')) {
+        $tokenRecord = self::getToken($request);
+
+        if (null === $tokenRecord || $tokenRecord->uses >= $tokenRecord->allowed_uses) {
+            $tokenRecord->delete();
             return [];
+        }
+
+        // increment uses
+        $tokenRecord->uses = $tokenRecord->uses + 1;
+        $tokenRecord->save();
+
+        // TODO: restrict by domain
+
+        return self::decodeJwtToken($tokenRecord->token, $tokenRecord->name);
+    }
+
+    public static function getToken(Request $request): ?Token
+    {
+        if (!$request->hasHeader('Authorization')) {
+            return null;
         }
 
         $authorization = $request->getHeader('Authorization');
@@ -54,15 +78,11 @@ class JwtTokenHelper
         $authorization = explode(' ', $authorization);
 
         if ($authorization[0] !== 'Bearer') {
-            return [];
+            return null;
         }
 
         $token = $authorization[1];
 
-        $tokenRecord = Token::byToken($token)->first();
-
-        // TODO: restrict by domain
-
-        return self::decodeJwtToken($token, $tokenRecord->name);
+        return Token::byToken($token)->first();
     }
 }

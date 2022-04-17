@@ -11,6 +11,7 @@ use Symfony\Component\Validator\Constraints\EqualTo;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Required;
 use Symfony\Component\Validator\Constraints\Type;
+use UserAuthorization\Exceptions\SingleUseTokenGenerationValidationException;
 use UserAuthorization\Exceptions\TokenDeleteValidationException;
 use UserAuthorization\Exceptions\TokenGenerationValidationException;
 use UserAuthorization\Models\Token;
@@ -116,6 +117,27 @@ class TokenRepository
     }
 
     /**
+     * @throws SingleUseTokenGenerationValidationException
+     */
+    public function validateSingleUseTokenData(array $data)
+    {
+        $results = $this->validateFields([
+            'uses' => [
+                'value' => array_get($data, 'uses'),
+                'rules' => [
+                    new Required,
+                    new Type('integer'),
+                    new EqualTo(1),
+                ],
+            ],
+        ]);
+
+        if (count($results) > 0) {
+            throw new SingleUseTokenGenerationValidationException(json_encode($results));
+        }
+    }
+
+    /**
      * @param Request $request
      * @return string
      * @throws TokenGenerationValidationException
@@ -135,6 +157,35 @@ class TokenRepository
         $this->createToken($data);
 
         return route('api-tokens');
+    }
+
+    /**
+     * @param Request $request
+     * @return string
+     * @throws TokenGenerationValidationException
+     * @throws SingleUseTokenGenerationValidationException
+     */
+    public function createSingleUse(Request $request): Token
+    {
+        $token = JwtTokenHelper::getToken($request);
+        if (null === $token) {
+            throw new Exception('Failed retrieving token from the request.');
+        }
+
+        $data = [
+            'name' => 'issued-' . Carbon::now()->timestamp . '-' . uniqid(),
+            'user_id' => $token->user_id,
+            'aud' => $token->aud,
+            'aud_protocol' => $token->aud_protocol,
+            'allowed_uses' => 1,
+        ];
+
+        // @throws TokenGenerationValidationException
+        $this->validateTokenData($data);
+        // @throws SingleUseTokenGenerationValidationException
+        $this->validateSingleUseTokenData($data);
+
+        return $this->createToken($data);
     }
 
     public function createToken(array $data): Token
