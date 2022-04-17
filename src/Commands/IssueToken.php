@@ -39,10 +39,6 @@ class IssueToken extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $output->writeln('');
-        $io->info('Kanata - Issue Token');
-        $output->writeln('');
-
         $name = $input->getOption('name');
         $email = $input->getOption('email');
         $expire = $input->getOption('expire');
@@ -90,12 +86,13 @@ class IssueToken extends Command
         }
 
         try {
-            (new TokenRepository)->createToken($data);
+            $tokenRecord = (new TokenRepository)->createToken($data);
         } catch (Exception $e) {
             $io->error('Failed to issue token: ' . $e->getMessage());
             return Command::FAILURE;
         }
 
+        $io->write('Token: ' . $tokenRecord->token . PHP_EOL);
         return Command::SUCCESS;
     }
 }
