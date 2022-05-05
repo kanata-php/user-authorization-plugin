@@ -20,6 +20,14 @@ php kanata plugin:publish UserAuthorization config
 
 ## Config
 
+### Seed
+
+To start with your first user without having to register through the UI, you can seed via kanata command:
+
+```shell
+php kanata user-auth:seed --name=John --email=johngalt@example.com --password=secret --email-verified
+```
+
 ### Email Verification
 
 To have the email verified, you'll need 2 items to be in place:
