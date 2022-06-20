@@ -53,7 +53,14 @@ class JwtTokenHelper
     {
         $tokenRecord = self::getToken($request);
 
-        if (null === $tokenRecord || $tokenRecord->uses >= $tokenRecord->allowed_uses) {
+        if (null === $tokenRecord) {
+            return [];
+        }
+
+        if (
+            null !== $tokenRecord->allowed_uses
+            && $tokenRecord->uses >= $tokenRecord->allowed_uses
+        ) {
             $tokenRecord->delete();
             return [];
         }

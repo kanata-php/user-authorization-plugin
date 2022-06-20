@@ -48,7 +48,7 @@ class IssueToken extends Command
         $error = false;
         if (null === $name) {
             $error = true;
-            $io->error('Name is required. (e.g.: --email="some name")');
+            $io->error('Name is required. (e.g.: --name="some name")');
         }
 
         if (null === $email) {
