@@ -22,7 +22,6 @@ use UserAuthorization\Http\Middlewares\AuthMiddleware;
 use UserAuthorization\Http\Controllers\LoginController;
 use UserAuthorization\Http\Controllers\RegisterController;
 use UserAuthorization\Services\JwtTokenHelper;
-use UserAuthorization\Services\SocketAuthHelper;
 
 /**
  * @Plugin(name="UserAuthorization")
@@ -221,7 +220,7 @@ class UserAuthorization implements KanataPluginInterface
             $tokenRecord->save();
 
             if (null === $tokenRecord) {
-                $this->deny_websocket_connection($server, $request->fd, 'Missing Token doesn\'t exist.');
+                $this->deny_websocket_connection($server, $request->fd, 'Token doesn\'t exist.');
                 return;
             }
 

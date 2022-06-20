@@ -9,9 +9,9 @@
     <meta name="title" content="<?=APP_NAME?>">
     <meta name="description" content="">
 
-    <link rel="icon" href="<?= base_url('/imgs/favicon.ico') ?>"/>
+    <link rel="icon" href="/imgs/favicon.ico"/>
 
-    <link rel="stylesheet" href="<?= base_url('/css/style.css') ?>">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="h-full">
 
@@ -50,6 +50,6 @@
         </div>
     </div>
 
-    <script src="<?= base_url('/js/app.js') ?>"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
