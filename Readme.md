@@ -36,3 +36,18 @@ To have the email verified, you'll need 2 items to be in place:
 2. Configuration `authorization.email-confirmation` set to `true`.
 
 Once you have those 2 in place, the system will send an email for confirmation. Without that users will have email set to verified as soon as they register.
+
+
+## Commands
+
+### Issue token
+
+```shell
+php kanata token:issue --name="my-token-name" --email=doe@kanata.com
+```
+
+### Seed Users
+
+```shell
+php kanata user-auth:seed --name="John Doe" --email=doe@kanata.com --password=secret
+```
