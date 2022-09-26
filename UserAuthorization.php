@@ -126,27 +126,31 @@ class UserAuthorization implements KanataPluginInterface
 
     public function register_migrations()
     {
-        add_action('rollback_migrations', function () {
+	add_action('rollback_migrations', function () {
+            $schema = container()->db->schema();
+
             // email_confirmation
-            if (mysql_table_exists(DB_DATABASE, EmailConfirmation::TABLE_NAME)) {
-                container()->db->schema()->drop(EmailConfirmation::TABLE_NAME);
+            if ($schema->hasTable(EmailConfirmation::TABLE_NAME)) {
+                $schema->drop(EmailConfirmation::TABLE_NAME);
             }
 
             // tokens
-            if (mysql_table_exists(DB_DATABASE, Token::TABLE_NAME)) {
-                container()->db->schema()->drop(Token::TABLE_NAME);
+            if ($schema->hasTable(Token::TABLE_NAME)) {
+                $schema->drop(Token::TABLE_NAME);
             }
 
             // users
-            if (mysql_table_exists(DB_DATABASE, User::TABLE_NAME)) {
-                container()->db->schema()->drop(User::TABLE_NAME);
+            if ($schema->hasTable(User::TABLE_NAME)) {
+                $schema->drop(User::TABLE_NAME);
             }
         });
 
-        add_action('migrations', function () {
+	add_action('migrations', function () {
+	    $schema = container()->db->schema();
+
             // users
-            if (!mysql_table_exists(DB_DATABASE, User::TABLE_NAME)) {
-                container()->db->schema()->create(User::TABLE_NAME, function (Blueprint $table) {
+            if (!$schema->hasTable(User::TABLE_NAME)) {
+                $schema->create(User::TABLE_NAME, function (Blueprint $table) {
                     $table->increments('id');
                     $table->string('name', 40);
                     $table->string('email', 80)->unique();
@@ -157,8 +161,8 @@ class UserAuthorization implements KanataPluginInterface
             }
 
             // email_confirmation
-            if (!mysql_table_exists(DB_DATABASE, EmailConfirmation::TABLE_NAME)) {
-                container()->db->schema()->create(EmailConfirmation::TABLE_NAME, function (Blueprint $table) {
+            if (!$schema->hasTable(EmailConfirmation::TABLE_NAME)) {
+                $schema->create(EmailConfirmation::TABLE_NAME, function (Blueprint $table) {
                     $table->increments('id');
                     $table->foreignId('user_id');
                     $table->string('token', 80);
@@ -169,8 +173,8 @@ class UserAuthorization implements KanataPluginInterface
             }
 
             // tokens
-            if (!mysql_table_exists(DB_DATABASE, Token::TABLE_NAME)) {
-                container()->db->schema()->create(Token::TABLE_NAME, function (Blueprint $table) {
+            if (!$schema->hasTable(Token::TABLE_NAME)) {
+                $schema->create(Token::TABLE_NAME, function (Blueprint $table) {
                     $table->increments('id');
                     $table->string('name', 40);
                     $table->string('token', 500);
