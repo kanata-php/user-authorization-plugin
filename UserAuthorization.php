@@ -126,7 +126,7 @@ class UserAuthorization implements KanataPluginInterface
 
     public function register_migrations()
     {
-	add_action('rollback_migrations', function () {
+	    add_action('rollback_migrations', function () {
             $schema = container()->db->schema();
 
             // email_confirmation
@@ -145,8 +145,8 @@ class UserAuthorization implements KanataPluginInterface
             }
         });
 
-	add_action('migrations', function () {
-	    $schema = container()->db->schema();
+	    add_action('migrations', function () {
+	        $schema = container()->db->schema();
 
             // users
             if (!$schema->hasTable(User::TABLE_NAME)) {
