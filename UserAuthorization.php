@@ -47,7 +47,7 @@ class UserAuthorization implements KanataPluginInterface
      */
     public function start(): void
     {
-        if (is_http_execution()) {
+        if (is_http_execution() || is_websocket_execution()) {
             $this->local_views();
             $this->register_routes();
         }
