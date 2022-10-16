@@ -220,13 +220,13 @@ class UserAuthorization implements KanataPluginInterface
             }
 
             $tokenRecord = Token::byToken($request->get['token'])->first();
-            $tokenRecord->uses = $tokenRecord->uses + 1;
-            $tokenRecord->save();
-
             if (null === $tokenRecord) {
                 $this->deny_websocket_connection($server, $request->fd, 'Token doesn\'t exist.');
                 return;
             }
+
+            $tokenRecord->uses = $tokenRecord->uses + 1;
+            $tokenRecord->save();
 
             if (
                 null !== $tokenRecord->aud
