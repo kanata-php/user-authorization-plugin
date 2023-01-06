@@ -37,6 +37,39 @@ To have the email verified, you'll need 2 items to be in place:
 
 Once you have those 2 in place, the system will send an email for confirmation. Without that users will have email set to verified as soon as they register.
 
+## API
+
+### Single-Use Token
+
+this endpoint servers the purpose to generate a Token to be used only once, after that it gets expired.
+
+#### Request
+
+`GET /api/issue-single-use-token`
+
+#### Responses
+
+**Success:**
+
+Status: 200
+
+Header:
+```
+Authorization: Bearer {token-value}
+```
+
+Body:
+```json
+{
+  "token": "token-value"
+}
+```
+
+**Errors**
+
+422 - Validation/Authorization Error.
+
+500 - Server Error.
 
 ## Commands
 

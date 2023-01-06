@@ -107,8 +107,6 @@ class UserAuthorization implements KanataPluginInterface
 
             // api
             $app->group('/api', function (RouteCollectorProxy $group) {
-                // $group->get('/users', [UsersController::class, 'index'])->setName('api-users-index');
-
                 $group->get('/issue-single-use-token', [UsersController::class, 'generateSingleUserToken'])->setName('issue-single-user-token');
             })->add(new JwtAuthMiddleware);
 
